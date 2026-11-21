@@ -1,0 +1,32 @@
+node_modules/
+.env
+certs/*.pem
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build files
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary archives
+backend.zip
+
+# IDE
+.vscode/
+.idea/
