@@ -24,8 +24,8 @@ Alur request: Client → app.js → route → validator → validate.js → cont
 - [x] Register, login (JWT), profil user, health check
 - [x] Middleware autentikasi dan otorisasi role (`authorize` belum dipakai)
 - [x] Seed akun uji admin & pelanggan
-- [ ] Uji tahap 1 ke Aiven (lihat README bagian 5)
-- [ ] Tahap 2: CRUD kategori (tulis: admin saja)
-- [ ] Tahap 3: CRUD produk + upload gambar (multer, validasi tipe/ukuran) + cari/filter
+- [x] Uji tahap 1 ke Aiven (lihat README bagian 5)
+- [x] Tahap 2: CRUD kategori (tulis: admin saja)
+- [x] Tahap 3: CRUD produk + upload gambar (multer, validasi tipe/ukuran) + cari/filter
 - [ ] Tahap 4: transaksi + detail transaksi (DB transaction, cek stok), status oleh admin
 - [ ] Tahap 5: ERD, dokumentasi endpoint, aplikasi Flutter
