@@ -17,7 +17,7 @@ app.use(express.json());
 // Gambar yang diupload dapat dibuka lewat http://host:3000/uploads/produk/<nama-file>
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-app.get('/', (req, res) => res.json({ success: true, message: 'API Rimbun berjalan', version: '0.5.0' }));
+app.get('/', (req, res) => res.json({ success: true, message: 'API Rimbun berjalan', version: '0.6.0' }));
 
 // Cek kesehatan: memastikan server DAN database terhubung.
 app.get('/api/health', asyncHandler(async (req, res) => {
@@ -28,6 +28,7 @@ app.get('/api/health', asyncHandler(async (req, res) => {
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/transactions', require('./routes/transactionRoutes'));
 
 app.use(notFound);

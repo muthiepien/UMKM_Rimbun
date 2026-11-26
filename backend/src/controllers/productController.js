@@ -4,6 +4,7 @@ const db = require('../config/db');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 const { success } = require('../utils/response');
+const { toUrl } = require('../utils/url');
 
 const UPLOAD_DIR = path.join(__dirname, '../../uploads/produk');
 
@@ -11,11 +12,6 @@ const UPLOAD_DIR = path.join(__dirname, '../../uploads/produk');
 const SELECT_PRODUK = `SELECT p.*, c.nama_category, c.jenis_category
                        FROM products p JOIN categories c ON c.id_category = p.id_category`;
 
-// gambar_produk bisa berupa URL luar (data seed) atau path lokal "/uploads/produk/xxx.jpg".
-const toUrl = (req, p) => {
-  if (!p) return null;
-  return /^https?:\/\//.test(p) ? p : `${req.protocol}://${req.get('host')}${p}`;
-};
 const format = (req, row) => ({ ...row, gambar_url: toUrl(req, row.gambar_produk) });
 
 // Hanya file hasil upload (path lokal) yang dihapus dari disk.
@@ -78,12 +74,25 @@ exports.update = asyncHandler(async (req, res) => {
   success(res, format(req, rows[0]), 'Produk berhasil diubah');
 });
 
-// DELETE /api/products/:id (admin) - ditolak 409 jika produk sudah ada di transaksi
+// DELETE /api/products/:id (admin)
+// Produk yang masih ada di keranjang orang akan dikeluarkan dari keranjang itu lebih dulu.
+// Produk yang sudah pernah dibeli (ada di detail_transaksi) ditolak 409 supaya riwayat transaksi utuh.
 exports.remove = asyncHandler(async (req, res) => {
   const [exist] = await db.execute('SELECT gambar_produk FROM products WHERE id_product = ?', [req.params.id]);
   if (!exist.length) throw new AppError('Produk tidak ditemukan', 404);
 
-  await db.execute('DELETE FROM products WHERE id_product = ?', [req.params.id]);
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.execute('DELETE FROM detail_keranjang WHERE id_product = ?', [req.params.id]);
+    await conn.execute('DELETE FROM products WHERE id_product = ?', [req.params.id]);
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
   hapusFileLokal(exist[0].gambar_produk);
   success(res, null, 'Produk berhasil dihapus');
 });

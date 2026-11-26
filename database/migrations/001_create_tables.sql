@@ -1,6 +1,6 @@
 -- Rimbun - Toko Pelayanan Pupuk dan Tanaman
 -- Migration 001: struktur tabel (DDL). Aman dijalankan berulang (IF NOT EXISTS).
--- Database dibuat oleh scripts/migrate.js sesuai DB_NAME di .env.
+-- Dijalankan MANUAL (MySQL Workbench / Aiven console) pada database `defaultdb`, yaitu DB_NAME di .env.
 
 CREATE TABLE IF NOT EXISTS users (
     id_user INT NOT NULL AUTO_INCREMENT,

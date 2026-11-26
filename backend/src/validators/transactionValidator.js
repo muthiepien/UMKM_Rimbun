@@ -1,6 +1,7 @@
 const { body, param, query } = require('express-validator');
 
 const STATUS = ['menunggu_konfirmasi', 'diproses', 'siap_diambil', 'selesai', 'dibatalkan'];
+const METODE = ['tunai', 'transfer', 'qris'];
 
 const id = [param('id').isInt({ min: 1 }).withMessage('ID transaksi harus angka positif')];
 
@@ -8,16 +9,19 @@ const filter = [
   query('status').optional().isIn(STATUS).withMessage(`Status harus salah satu dari: ${STATUS.join(', ')}`),
 ];
 
-// Body: { "items": [ { "id_product": 1, "jumlah": 2 }, ... ] }
-// Harga TIDAK diminta dari client; harga selalu diambil dari database.
+// Checkout mengambil isi KERANJANG user, jadi body hanya berisi metode pembayaran.
+// Harga & jumlah tidak pernah dipercaya dari client; semuanya dibaca dari database.
 const create = [
-  body('items').isArray({ min: 1, max: 50 }).withMessage('items harus berupa daftar berisi 1-50 produk'),
-  body('items.*.id_product').isInt({ min: 1 }).withMessage('id_product harus angka positif'),
-  body('items.*.jumlah').isInt({ min: 1, max: 1000 }).withMessage('jumlah harus angka 1-1000'),
+  body('metode_pembayaran').optional().isIn(METODE).withMessage(`Metode pembayaran harus salah satu dari: ${METODE.join(', ')}`),
 ];
 
 const status = [
   body('status').isIn(STATUS).withMessage(`Status harus salah satu dari: ${STATUS.join(', ')}`),
 ];
 
-module.exports = { id, filter, create, status };
+// Admin memverifikasi pembayaran: terima (berhasil) atau tolak (ditolak).
+const paymentVerify = [
+  body('status_pembayaran').isIn(['berhasil', 'ditolak']).withMessage("status_pembayaran harus 'berhasil' atau 'ditolak'"),
+];
+
+module.exports = { id, filter, create, status, paymentVerify };

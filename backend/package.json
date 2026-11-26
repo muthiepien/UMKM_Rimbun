@@ -1,12 +1,11 @@
 {
   "name": "rimbun-backend",
-  "version": "0.2.0",
+  "version": "0.6.0",
   "description": "REST API Rimbun (toko pupuk dan tanaman) - Node.js, Express, MySQL (Aiven)",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "db:migrate": "node scripts/migrate.js",
     "seed:users": "node scripts/seedUsers.js"
   },
   "license": "ISC",
