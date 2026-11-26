@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart' show MediaType;
 
 import '../config/api_config.dart';
 import 'api_exception.dart';
@@ -41,6 +43,44 @@ class ApiClient {
 
   Future<ApiResponse> delete(String path) => _send('DELETE', path);
 
+  /// Kirim form-data (teks + satu gambar opsional dengan nama field "gambar").
+  /// Dipakai untuk tambah/ubah produk (POST/PUT /api/products).
+  Future<ApiResponse> sendMultipart(
+    String method,
+    String path, {
+    required Map<String, String> fields,
+    Uint8List? fileBytes,
+    String? fileName,
+  }) async {
+    final request = http.MultipartRequest(method, _uri(path, null))
+      ..headers['Accept'] = 'application/json'
+      ..fields.addAll(fields);
+
+    if (fileBytes != null && fileName != null) {
+      // Backend memeriksa Content-Type bagian file, jadi harus diisi benar.
+      request.files.add(http.MultipartFile.fromBytes(
+        'gambar',
+        fileBytes,
+        filename: fileName,
+        contentType: imageMediaType(fileName),
+      ));
+    }
+    _attachToken(request);
+    return _handle(await _execute(request));
+  }
+
+  /// Batas ukuran gambar sama dengan backend (2 MB).
+  static const int maxImageBytes = 2 * 1024 * 1024;
+
+  /// Tipe gambar yang diterima backend: JPG, PNG, WEBP. Selain itu -> ApiException.
+  static MediaType imageMediaType(String fileName) {
+    final name = fileName.toLowerCase();
+    if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return MediaType('image', 'jpeg');
+    if (name.endsWith('.png')) return MediaType('image', 'png');
+    if (name.endsWith('.webp')) return MediaType('image', 'webp');
+    throw const ApiException('Gambar harus berformat JPG, PNG, atau WEBP.');
+  }
+
   void dispose() => _http.close();
 
   // ───────────────────────── internal
@@ -65,8 +105,7 @@ class ApiClient {
     final request = http.Request(method, _uri(path, query))
       ..headers['Accept'] = 'application/json';
 
-    final token = _token;
-    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    _attachToken(request);
 
     if (body != null) {
       request.headers['Content-Type'] = 'application/json';
@@ -76,7 +115,12 @@ class ApiClient {
     return _handle(await _execute(request));
   }
 
-  Future<http.Response> _execute(http.Request request) async {
+  void _attachToken(http.BaseRequest request) {
+    final token = _token;
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+  }
+
+  Future<http.Response> _execute(http.BaseRequest request) async {
     try {
       final streamed = await _http.send(request).timeout(ApiConfig.timeout);
       return await http.Response.fromStream(streamed).timeout(ApiConfig.timeout);

@@ -1,30 +1,41 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:frontend/main.dart';
+import 'package:frontend/app.dart';
+import 'package:frontend/core/network/api_client.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  setUpAll(() async {
+    await initializeDateFormatting('id_ID');
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('layar cek koneksi menampilkan status server & database', (tester) async {
+    final client = MockClient((request) async {
+      expect(request.url.path, '/api/health');
+      return http.Response(
+        jsonEncode({
+          'success': true,
+          'message': 'Server dan database terhubung',
+          'data': {'database_name': 'defaultdb', 'server_time': '2026-11-26T02:00:00.000Z'},
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [Provider<ApiClient>.value(value: ApiClient(httpClient: client))],
+        child: const RimbunApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Server dan database terhubung'), findsOneWidget);
+    expect(find.text('defaultdb'), findsOneWidget);
   });
 }
